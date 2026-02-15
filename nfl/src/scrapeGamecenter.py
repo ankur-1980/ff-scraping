@@ -1,8 +1,6 @@
 from src.config import league_id
 from src.http_client import get_soup
 from src.secrets import cookie_string
-from src.utils.parse_gamecenter import parse_owner, parse_players, parse_team_total
-from src.utils.getOwnersCount import get_number_of_owners
 
 URL = f"https://fantasy.nfl.com/league/{league_id}/history/2025/teamgamecenter?teamId=10&week=1"
 
@@ -18,13 +16,6 @@ def main() -> None:
         print("WARNING: page looks like login/block content")
 
     print(f"HTML length: {len(html)}")
-
-    owners = get_number_of_owners(league_id, 2025, cookie_string)
-    team_total = parse_team_total(soup)
-    players = parse_players(soup)
-    
-    
-    print(f"owners: {owners}")
 
 if __name__ == "__main__":
     main()

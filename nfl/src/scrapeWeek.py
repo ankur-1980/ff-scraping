@@ -49,8 +49,6 @@ def main() -> None:
     if longest_bench_team_id == -1:
         raise RuntimeError("Could not determine longest bench team")
 
-    print(f"Longest bench: team_id={longest_bench_team_id} len={longest_bench_len}")
-
     # 3) Build header from a “representative” soup (use longest bench team)
     starter_slots = get_starter_slots(soups[longest_bench_team_id])
     header = build_header(starter_slots, longest_bench_len)

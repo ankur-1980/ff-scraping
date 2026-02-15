@@ -6,9 +6,9 @@ from src.config import (
 )
 from src.http_client import get_soup
 from src.output_paths import ensure_output_paths
-from src.parsers.owners import apply_owners
-from src.parsers.playoffs import apply_playoffs
-from src.parsers.regular_standings import parse_regular_standings
+from src.utils.owners import apply_owners
+from src.utils.playoffs import apply_playoffs
+from src.utils.regular_standings import parse_regular_standings
 from src.secrets import cookie_string
 from src.writer import write_standings_csv
 import time

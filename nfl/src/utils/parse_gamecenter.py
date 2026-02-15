@@ -1,22 +1,25 @@
 from dataclasses import dataclass
 import re
-from bs4 import BeautifulSoup as BS
+from bs4 import BeautifulSoup
 
 @dataclass(frozen=True)
 class PlayerRow:
     slot: str
     name: str
     points: str
+    
+_BLOCKY = re.compile(r"\bteamWrap\b.*\bteamWrap-2\b")
+_USERNAME = re.compile(r"\buserName\b")
 
-def parse_owner(soup: BS) -> str:
+def parse_owner(soup: BeautifulSoup) -> str:
     owner_span = soup.find("span", class_=re.compile(r"userName\s+userId"))
     return owner_span.get_text(strip=True) if owner_span else "-"
 
-def parse_team_total(soup: BS) -> str:
+def parse_team_total(soup: BeautifulSoup) -> str:
     totals = soup.find_all("div", class_=re.compile(r"teamTotal\s+teamId-"))
     return totals[0].get_text(strip=True) if totals else "-"
 
-def parse_players(soup: BS) -> list[PlayerRow]:
+def parse_players(soup: BeautifulSoup) -> list[PlayerRow]:
     matchup = soup.find("div", id="teamMatchupBoxScore")
     if not matchup:
         return []
@@ -42,13 +45,13 @@ def parse_players(soup: BS) -> list[PlayerRow]:
 
     return rows
 
-def parse_bench_len(soup: BS) -> int:
+def parse_bench_len(soup: BeautifulSoup) -> int:
     bench_wrap = soup.find("div", id="tableWrapBN-1")
     if not bench_wrap:
         return 0
     return len(bench_wrap.find_all("td", class_="playerNameAndInfo"))
 
-def parse_rank(soup: BS) -> str:
+def parse_rank(soup: BeautifulSoup) -> str:
     # rank_text looks like "... (3) ..." -> extract inside parentheses
     rank_span = soup.find("span", class_=re.compile(r"teamRank\s+teamId-"))
     rank_text = rank_span.get_text(strip=True) if rank_span else ""
@@ -56,23 +59,37 @@ def parse_rank(soup: BS) -> str:
     return m.group(1) if m else "-"
 
 
-def parse_opponent_owner(soup: BS) -> str:
+def parse_opponent_owner(soup: BeautifulSoup) -> str:
     matchup = soup.find("div", id="teamMatchupBoxScore")
     if not matchup:
         return "-"
-    team_wrap_2 = matchup.find("div", class_=re.compile(r"\bteamWrap\b.*\bteamWrap-2\b"))
+
+    teamWrap2 = re.compile(r"\bteamWrap\b.*\bteamWrap-2\b")
+    team_wrap_2 = matchup.find("div", class_=teamWrap2)
     if not team_wrap_2:
         return "-"
-    opp_owner_span = team_wrap_2.find("span", class_=re.compile(r"userName\s+userId"))
-    return opp_owner_span.get_text(strip=True) if opp_owner_span else "-"
 
-def parse_opponent_total(soup: BS) -> str:
+    # Primary: opponent team name appears in <h4>...</h4>
+    h4 = team_wrap_2.find("h4")
+    if h4:
+        text = h4.get_text(" ", strip=True)
+        return text or "-"
+
+    # Fallback: some pages might show a username element
+    tag = team_wrap_2.select_one(".userName")
+    if tag:
+        text = tag.get_text(" ", strip=True)
+        return text or "-"
+
+    return "-"
+
+def parse_opponent_total(soup: BeautifulSoup) -> str:
     team_totals = soup.find_all("div", class_=re.compile(r"teamTotal\s+teamId-"))
     return team_totals[1].get_text(strip=True) if len(team_totals) >= 2 else "-"
 
 
 
-def get_starter_slots(soup: BS) -> list[str]:
+def get_starter_slots(soup: BeautifulSoup) -> list[str]:
     """
     Pull slot labels (QB/RB/WR/...) from player rows.
     We'll treat non-BN slots as starters.
@@ -98,7 +115,7 @@ def get_starter_slots(soup: BS) -> list[str]:
     return slots
 
 
-def get_roster_names(soup: BS, longest_bench_len: int) -> list[str]:
+def get_roster_names(soup: BeautifulSoup, longest_bench_len: int) -> list[str]:
     """
     Roster = starters (tableWrap-1) + bench (tableWrapBN-1), padded to longest_bench_len.
     """
@@ -124,7 +141,7 @@ def get_roster_names(soup: BS, longest_bench_len: int) -> list[str]:
     return starters + bench
 
 
-def get_roster_points(soup: BS) -> list[str]:
+def get_roster_points(soup: BeautifulSoup) -> list[str]:
     """
     Pull points cells. This is the “old approach” and can misalign in edge cases,
     but it's enough for the first CSV commit. We'll harden later.
