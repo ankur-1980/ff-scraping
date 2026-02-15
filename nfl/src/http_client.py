@@ -18,6 +18,8 @@ DEFAULT_HEADERS: dict[str, str] = {
     "Upgrade-Insecure-Requests": "1",
 }
 
+SESSION = requests.Session()
+
 
 class ScrapeBlockedError(RuntimeError):
     pass
@@ -41,30 +43,25 @@ def looks_like_login_or_block(html: str) -> bool:
     )
 
 
-def get_soup(
-    url: str,
-    cookie_string: str,
-    must_contain: Optional[Iterable[str]] = None,
-) -> BS:
-    session = requests.Session()
-
-    # warmup
-    session.get("https://fantasy.nfl.com/", headers=DEFAULT_HEADERS, timeout=30)
+def get_soup(url: str, cookie_string: str, must_contain: Optional[Iterable[str]] = None) -> BS:
+    # warmup (same as before)
+    SESSION.get("https://fantasy.nfl.com/", headers=DEFAULT_HEADERS, timeout=30)
 
     headers = dict(DEFAULT_HEADERS)
     headers["Cookie"] = cookie_string
 
-    resp = session.get(url, headers=headers, timeout=30, allow_redirects=True)
+    resp = SESSION.get(url, headers=headers, timeout=30, allow_redirects=True)
     resp.raise_for_status()
 
+    html = resp.text or ""
     if must_contain:
-        missing = [m for m in must_contain if m not in resp.text]
+        missing = [m for m in must_contain if m not in html]
         if missing:
-            snippet = resp.text[:1200].replace("\n", " ")
+            snippet = html[:1200].replace("\n", " ")
             raise RuntimeError(
                 f"Did not receive expected HTML for URL:\n{url}\n\n"
                 f"Missing markers: {missing}\n\n"
                 f"HTML snippet:\n{snippet}"
             )
 
-    return BS(resp.text, "html.parser")
+    return BS(html, "html.parser")
