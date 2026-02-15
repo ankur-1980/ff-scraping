@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup as BS
-from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total
+from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total, parse_team_projected_total
 from src.utils.getterGamecenter import get_roster_names, get_roster_points
 
 def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
@@ -12,7 +12,8 @@ def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
         header.append(f"BN{i}")
         header.append("Points")
 
-    header += ["Total", "Opponent", "Opponent Total"]
+    header += ["Total", "Projected Total", "Opponent", "Opponent Total"]
+
     return header
 
 def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> list[str]:
@@ -28,7 +29,12 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
         roster_and_points.append(points[idx] if idx < len(points) else "-")
 
     total = parse_team_total(soup)
+    projected = parse_team_projected_total(soup)
     opp_owner = parse_opponent_owner(soup)
     opp_total = parse_opponent_total(soup)
 
-    return [owner, rank] + roster_and_points + [total, opp_owner, opp_total]
+    return (
+    [owner, rank]
+    + roster_and_points
+    + [total, projected, opp_owner, opp_total]
+)

@@ -157,3 +157,23 @@ def get_roster_points(soup: BeautifulSoup) -> list[str]:
     totals_tds = team_wrap_1.find_all("td", class_=re.compile(r"\bstatTotal\b"))
     return [td.get_text(strip=True) for td in totals_tds]
 
+def parse_team_projected_total(soup: BeautifulSoup) -> str:
+    matchup = soup.find("div", id="teamMatchupBoxScore")
+    if not matchup:
+        return "-"
+    print('matchup')    
+
+    team_wrap_1 = matchup.find("div", class_=re.compile(r"\bteamWrap\b.*\bteamWrap-1\b"))
+    scope = team_wrap_1 or matchup
+    print('team_wrap_1')
+
+    projected_div = scope.find(class_="teamTotalProjected")
+    if not projected_div:
+        return "-"
+    print('projected_div')
+    text = projected_div.get_text(" ", strip=True)  # e.g. "Proj 111.65"
+    m = re.search(r"([\d.]+)", text)
+    return m.group(1) if m else "-"
+
+
+
