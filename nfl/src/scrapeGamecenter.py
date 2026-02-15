@@ -1,8 +1,8 @@
 from src.config import league_id
 from src.http_client import get_soup
 from src.secrets import cookie_string
-from src.parsers.parse_gamecenter import parse_owner, parse_players, parse_team_total
-from nfl.src.parsers.getOwnersCount import get_number_of_owners
+from src.utils.parse_gamecenter import parse_owner, parse_players, parse_team_total
+from src.utils.getOwnersCount import get_number_of_owners
 
 URL = f"https://fantasy.nfl.com/league/{league_id}/history/2025/teamgamecenter?teamId=10&week=1"
 

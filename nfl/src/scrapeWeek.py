@@ -7,10 +7,10 @@ from src.config import league_id
 from src.output_paths import ensure_output_paths
 from src.http_client import get_soup
 from src.secrets import cookie_string
-from src.parsers.parse_gamecenter import parse_bench_len
-from nfl.src.parsers.getterGamecenter import get_starter_slots
-from src.parsers.gamecenterCsvUtils import build_header, build_row
-from nfl.src.parsers.getOwnersCount import get_number_of_owners
+from src.utils.parse_gamecenter import parse_bench_len
+from src.utils.getterGamecenter import get_starter_slots
+from src.utils.gamecenterCsvUtils import build_header, build_row
+from src.utils.getOwnersCount import get_number_of_owners
 
 def gamecenter_url(season: int, team_id: int, week: int) -> str:
     return (

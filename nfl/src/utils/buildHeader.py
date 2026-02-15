@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as BS
-from src.parsers.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total
-from nfl.src.parsers.getterGamecenter import get_roster_names, get_roster_points
+from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total
+from src.utils.getterGamecenter import get_roster_names, get_roster_points
 
 def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
     header: list[str] = ["Owner", "Rank"]
