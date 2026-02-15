@@ -6,12 +6,11 @@ from src.secrets import cookie_string
 
 from src.utils.getOwnersCount import get_number_of_owners
 from src.utils.getSeasonLength import get_season_length
-# from src.scrapeWeek import scrape_week
+from src.scrapeWeek import scrape_week
 
 
 def main() -> None:
     season = 2025
-    season_length = 2
 
     paths = ensure_output_paths(
         league_id=league_id,
@@ -20,13 +19,12 @@ def main() -> None:
     )
 
     number_of_owners = get_number_of_owners(league_id, season, cookie_string)
-    # season_length = get_season_length(league_id=league_id, season=season, cookie_string=cookie_string)
-    season_length = 2
+    season_length = get_season_length(league_id=league_id, season=season, cookie_string=cookie_string)
 
     print(f"Season {season}: owners={number_of_owners}, weeks={season_length}")
 
     for week in range(1, season_length + 1):
-        out_csv = paths.gamecenter_dir / f"{week}.csv"
+        out_csv = paths.gamecenter_dir / f"{season}-{week}.csv"
 
         # Skip if already scraped (super useful when rerunning)
         if out_csv.exists():
