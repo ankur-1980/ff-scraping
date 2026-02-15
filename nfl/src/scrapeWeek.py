@@ -1,4 +1,5 @@
 import re
+from bs4 import BeautifulSoup
 
 from src.config import league_id
 from src.http_client import get_soup
@@ -13,12 +14,12 @@ def gamecenter_url(season: str, team_id: int, week: int) -> str:
     )
 
 
-def parse_owner(soup) -> str:
+def parse_owner(soup: BeautifulSoup) -> str:
     owner_span = soup.find("span", class_=re.compile(r"userName\s+userId"))
     return owner_span.get_text(strip=True) if owner_span else "-"
 
 
-def parse_bench_len(soup) -> int:
+def parse_bench_len(soup: BeautifulSoup) -> int:
     bench_wrap = soup.find("div", id="tableWrapBN-1")
     if not bench_wrap:
         return 0
@@ -26,21 +27,27 @@ def parse_bench_len(soup) -> int:
 
 
 def main() -> None:
-    # Change these while you iterate (or swap to argparse later)
     season = "2025"
     week = 1
 
     number_of_owners = get_number_of_owners(league_id, season, cookie_string)
     print(f"Season={season} Week={week} Owners={number_of_owners}")
 
-    longest_bench_len = -1
-    longest_bench_team_id = -1
-    longest_bench_owner = "-"
+    # ✅ Cache soups here
+    soups: dict[int, BeautifulSoup] = {}
 
     for team_id in range(1, number_of_owners + 1):
         url = gamecenter_url(season, team_id, week)
         soup = get_soup(url, cookie_string, must_contain=["teamMatchupBoxScore", "userName"])
+        soups[team_id] = soup
 
+    print("Finished fetching all teams.\n")
+
+    longest_bench_len = -1
+    longest_bench_team_id = -1
+    longest_bench_owner = "-"
+
+    for team_id, soup in soups.items():
         owner = parse_owner(soup)
         bench_len = parse_bench_len(soup)
 
@@ -52,7 +59,7 @@ def main() -> None:
             longest_bench_owner = owner
 
     print(
-        f"Longest bench: team_id={longest_bench_team_id} "
+        f"\nLongest bench: team_id={longest_bench_team_id} "
         f"owner={longest_bench_owner} bench={longest_bench_len}"
     )
 
