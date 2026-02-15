@@ -4,7 +4,7 @@ from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_
 from src.utils.getterGamecenter import get_roster_names, get_roster_points
 
 def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
-    header: list[str] = ["Owner", "Rank", "Result"]
+    header: list[str] = ["Owner", "Rank", "Result", "Diff"]
     for slot in starter_slots:
         header.append(slot)
         header.append("Points")
@@ -33,10 +33,20 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
     projected = parse_team_projected_total(soup)
     opp_owner = parse_opponent_owner(soup)
     opp_total = parse_opponent_total(soup)
+    
     result = compute_result(total, opp_total, opp_owner)
+    diff = compute_diff(total, opp_total)
+    
+    if result != "BYE" and diff != "-":
+        d = float(diff)
+        assert (
+            (result == "W" and d > 0)
+            or (result == "L" and d < 0)
+            or (result == "T" and d == 0)
+        ), f"Inconsistent result/diff: result={result}, diff={diff}, total={total}, opp_total={opp_total}"
 
     return (
-    [owner, rank, result]
+    [owner, rank, result, diff]
     + roster_and_points
     + [total, projected, opp_owner, opp_total]
 )
@@ -62,3 +72,13 @@ def compute_result(team_total: str, opp_total: str, opponent: str) -> str:
     if a < b:
         return "L"
     return "T"
+
+def compute_diff(team_total: str, opp_total: str) -> str:
+    a = _to_float(team_total)
+    b = _to_float(opp_total)
+
+    if a is None or b is None:
+        return "-"
+
+    diff = a - b
+    return f"{diff:.2f}"
