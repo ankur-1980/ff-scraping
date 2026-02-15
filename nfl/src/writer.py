@@ -11,7 +11,9 @@ CSV_HEADER: list[str] = [
     "TeamID",
     "TeamName",
     "RegularSeasonRank",
-    "Record",
+    "Wins",
+    "Losses",
+    "Ties",
     "PointsFor",
     "PointsAgainst",
     "PlayoffRank",
@@ -22,7 +24,8 @@ CSV_HEADER: list[str] = [
 
 
 def write_standings_csv(path: Path, rows: Iterable[TeamSeasonRow]) -> None:
-    # Stable sort by rank if possible
+    path.parent.mkdir(parents=True, exist_ok=True)
+
     def sort_key(r: TeamSeasonRow) -> tuple[int, str]:
         try:
             return (int(r.regular_season_rank), r.team_name)
@@ -41,7 +44,9 @@ def write_standings_csv(path: Path, rows: Iterable[TeamSeasonRow]) -> None:
                     r.team_id,
                     r.team_name,
                     r.regular_season_rank,
-                    r.record,
+                    r.wins,
+                    r.losses,
+                    r.ties,
                     r.points_for,
                     r.points_against,
                     r.playoff_rank,

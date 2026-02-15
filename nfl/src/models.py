@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass
 
 
@@ -8,7 +7,11 @@ class TeamSeasonRow:
     team_id: str
     team_name: str
     regular_season_rank: str
-    record: str
+
+    wins: int
+    losses: int
+    ties: int
+
     points_for: str
     points_against: str
 

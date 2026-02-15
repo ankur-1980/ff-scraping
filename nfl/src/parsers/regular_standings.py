@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Optional, Pattern
+from typing import Dict, Optional, Pattern, Tuple
 
 from bs4 import BeautifulSoup, Tag
 
@@ -25,6 +25,26 @@ def _extract_team_id(team_link: Tag) -> Optional[str]:
     return None
 
 
+def _parse_record(record_text: str) -> Tuple[int, int, int]:
+    """
+    Expected formats usually look like:
+      "8-6-0" (W-L-T)
+    Be defensive: if missing or weird, return (0,0,0).
+    """
+    text = (record_text or "").strip()
+    parts = text.split("-")
+    if len(parts) != 3:
+        return (0, 0, 0)
+
+    try:
+        w = int(parts[0].strip())
+        l = int(parts[1].strip())
+        t = int(parts[2].strip())
+        return (w, l, t)
+    except ValueError:
+        return (0, 0, 0)
+
+
 def parse_regular_standings(soup: BeautifulSoup) -> Dict[str, TeamSeasonRow]:
     rows: Dict[str, TeamSeasonRow] = {}
 
@@ -41,14 +61,18 @@ def parse_regular_standings(soup: BeautifulSoup) -> Dict[str, TeamSeasonRow]:
 
         team_name = name_tag.get_text(strip=True)
         team_id = _extract_team_id(name_tag)
-
         key = team_id if team_id else team_name.strip().casefold()
+
+        record_text = record_tag.get_text(strip=True)
+        wins, losses, ties = _parse_record(record_text)
 
         rows[key] = TeamSeasonRow(
             team_id=team_id or "",
             team_name=team_name,
             regular_season_rank=rank_tag.get_text(strip=True),
-            record=record_tag.get_text(strip=True),
+            wins=wins,
+            losses=losses,
+            ties=ties,
             points_for=pts_tags[0].get_text(strip=True),
             points_against=pts_tags[1].get_text(strip=True),
         )
