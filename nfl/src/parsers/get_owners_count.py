@@ -5,7 +5,7 @@ from src.http_client import get_soup
 
 def get_number_of_owners(
     league_id: str,
-    season: str,
+    season: int,
     cookie_string: str,
 ) -> int:
     owners_url = (
