@@ -1,0 +1,13 @@
+[project]
+name = "nfl-history-scraper"
+version = "0.0.1"
+description = "Scraper for NFL fantasy league history"
+requires-python = ">=3.10"
+dependencies = [
+    "requests",
+    "beautifulsoup4",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
