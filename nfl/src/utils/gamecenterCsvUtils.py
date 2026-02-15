@@ -17,12 +17,27 @@ def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
 
     return header
 
+def _pad_to(items: list[str], target_len: int, fill: str = "-") -> list[str]:
+    if len(items) < target_len:
+        items.extend([fill] * (target_len - len(items)))
+    return items[:target_len]
+
+
 def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> list[str]:
     owner = parse_owner(soup)
     rank = parse_rank(soup)
 
+    expected_starters = len(starter_slots)
+    expected_roster_len = expected_starters + longest_bench_len
+
     roster = get_roster_names(soup, longest_bench_len)
+
+    # ✅ Critical: ensure roster matches header expectation (starters + bench)
+    roster = _pad_to(roster, expected_roster_len)
+
     points = get_roster_points(soup)
+    # ✅ Also pad points so we always have one per roster slot
+    points = _pad_to(points, expected_roster_len)
 
     roster_and_points: list[str] = []
     for idx, name in enumerate(roster):
@@ -33,10 +48,10 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
     projected = parse_team_projected_total(soup)
     opp_owner = parse_opponent_owner(soup)
     opp_total = parse_opponent_total(soup)
-    
+
     result = compute_result(total, opp_total, opp_owner)
     diff = compute_diff(total, opp_total)
-    
+
     if result != "BYE" and diff != "-":
         d = float(diff)
         assert (
@@ -46,10 +61,11 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
         ), f"Inconsistent result/diff: result={result}, diff={diff}, total={total}, opp_total={opp_total}"
 
     return (
-    [owner, rank, result, diff]
-    + roster_and_points
-    + [total, projected, opp_owner, opp_total]
-)
+        [owner, rank, result, diff]
+        + roster_and_points
+        + [total, projected, opp_owner, opp_total]
+    )
+
 
 _NUM = re.compile(r"[-+]?\d*\.?\d+")
 

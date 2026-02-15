@@ -20,7 +20,7 @@ def gamecenter_url(season: int, team_id: int, week: int) -> str:
     
 def main() -> None:
     season = 2025
-    week = 1
+    week = 2
     
     paths = ensure_output_paths(
     league_id=league_id,
