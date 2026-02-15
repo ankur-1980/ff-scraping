@@ -4,7 +4,8 @@ import csv
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
-from src.config import cutoff_playoffs
+from src.config import cutoff_playoffs, league_id, REQUIRED_COLUMNS
+from collections import defaultdict
 
 
 def safe_int(value: str | None) -> int:
@@ -31,7 +32,7 @@ def safe_float(value: str | None) -> float:
         return 0.0
 
 
-def safe_playoff_rank(value: str | None) -> int:
+def safe_rank(value: str | None) -> int:
     """
     PlayoffRank might be "", "1", or sometimes "1st" depending on source.
     Extract digits defensively.
@@ -62,11 +63,11 @@ class ManagerAgg:
     trades: int = 0
     playoffs: int = 0
     championships: int = 0
-    bottom4: int = 0
+    toilet_bowls: int = 0
 
 
-def aggregate_stats(standings_dir: Path) -> Dict[str, ManagerAgg]:
-    aggregated: Dict[str, ManagerAgg] = {}
+def aggregate_stats(standings_dir: Path) -> dict[str, ManagerAgg]:
+    aggregated: defaultdict[str, ManagerAgg] = defaultdict(ManagerAgg)
 
     season_files = sorted(standings_dir.glob("*.csv"))
     if not season_files:
@@ -78,19 +79,7 @@ def aggregate_stats(standings_dir: Path) -> Dict[str, ManagerAgg]:
         with season_path.open("r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
 
-            required = {
-                "ManagerName",
-                "Wins",
-                "Losses",
-                "Ties",
-                "PointsFor",
-                "PointsAgainst",
-                "Moves",
-                "Trades",
-                "PlayoffRank",
-                "RegularSeasonRank"
-            }
-            missing = required - set(reader.fieldnames or [])
+            missing = REQUIRED_COLUMNS - set(reader.fieldnames or [])
             if missing:
                 raise RuntimeError(f"{season_path.name} missing columns: {sorted(missing)}")
 
@@ -98,6 +87,7 @@ def aggregate_stats(standings_dir: Path) -> Dict[str, ManagerAgg]:
 
         num_owners = len(season_rows)
         playoff_cutoff = cutoff_playoffs
+        bottom_four_cutoff = max(1, num_owners - 3)
 
         for row in season_rows:
             manager = (row.get("ManagerName") or "").strip()
@@ -105,7 +95,7 @@ def aggregate_stats(standings_dir: Path) -> Dict[str, ManagerAgg]:
                 continue
 
             managers_seen_this_season.add(manager)
-            agg = aggregated.setdefault(manager, ManagerAgg())
+            agg = aggregated[manager]
 
             agg.wins += safe_int(row.get("Wins"))
             agg.losses += safe_int(row.get("Losses"))
@@ -115,24 +105,21 @@ def aggregate_stats(standings_dir: Path) -> Dict[str, ManagerAgg]:
             agg.moves += safe_int(row.get("Moves"))
             agg.trades += safe_int(row.get("Trades"))
 
-            rank_playoff = safe_playoff_rank(row.get("PlayoffRank"))
+            rank_playoff = safe_rank(row.get("PlayoffRank"))
             if rank_playoff == 1:
                 agg.playoffs += 1
                 agg.championships += 1
-            elif rank_playoff and rank_playoff <= playoff_cutoff:
+            elif 0 < rank_playoff <= playoff_cutoff:
                 agg.playoffs += 1
-                
-            rank_bottom4 = safe_playoff_rank(row.get("RegularSeasonRank"))
-            num_owners = len(season_rows)
-            bottom_four_cutoff = num_owners - 3
-            if rank_bottom4 and rank_bottom4 >= bottom_four_cutoff:
-                agg.bottom4 += 1
-            
+
+            reg_rank = safe_rank(row.get("RegularSeasonRank"))
+            if reg_rank and reg_rank >= bottom_four_cutoff:
+                agg.toilet_bowls += 1
 
         for manager in managers_seen_this_season:
-            aggregated.setdefault(manager, ManagerAgg()).seasons += 1
+            aggregated[manager].seasons += 1
 
-    return aggregated
+    return dict(aggregated)
 
 
 def write_aggregated_csv(output_path: Path, aggregated: Dict[str, ManagerAgg]) -> None:
@@ -172,13 +159,12 @@ def write_aggregated_csv(output_path: Path, aggregated: Dict[str, ManagerAgg]) -
                     a.trades,
                     a.playoffs,
                     a.championships,
-                    a.bottom4
+                    a.toilet_bowls
                 ]
             )
 
 
 def main() -> None:
-    league_id = "879846"
     base_output = Path("output")
     standings_dir = base_output / f"{league_id}-history-standings"
     output_csv = base_output / "aggregated_standings_data.csv"

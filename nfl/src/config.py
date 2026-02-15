@@ -6,3 +6,17 @@ league_end_year: int = 2025  # inclusive
 cutoff_playoffs:int = 4
 
 BASE_OUTPUT_DIR: Path = Path("output")
+
+REQUIRED_COLUMNS = {
+    "ManagerName",
+    "Wins",
+    "Losses",
+    "Ties",
+    "PointsFor",
+    "PointsAgainst",
+    "Moves",
+    "Trades",
+    "PlayoffRank",
+    "RegularSeasonRank",
+}
+
