@@ -3,8 +3,12 @@ from bs4 import BeautifulSoup as BS
 from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total, parse_team_projected_total
 from src.utils.getterGamecenter import get_roster_names, get_roster_points
 
+_NUM = re.compile(r"[-+]?\d*\.?\d+")
+
 def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
-    header: list[str] = ["Owner", "Rank", "Result", "Diff"]
+    header = ["Owner", "Rank", "Result", "Diff"]
+    header += ["Top Starter", "Top Starter Points", "Low Starter", "Low Starter Points"]
+
     for slot in starter_slots:
         header.append(slot)
         header.append("Points")
@@ -38,6 +42,12 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
     points = get_roster_points(soup)
     # ✅ Also pad points so we always have one per roster slot
     points = _pad_to(points, expected_roster_len)
+    
+    top_name, top_pts, low_name, low_pts = compute_starter_extremes(
+    roster=roster,
+    points=points,
+    starter_count=expected_starters,
+)
 
     roster_and_points: list[str] = []
     for idx, name in enumerate(roster):
@@ -61,13 +71,11 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
         ), f"Inconsistent result/diff: result={result}, diff={diff}, total={total}, opp_total={opp_total}"
 
     return (
-        [owner, rank, result, diff]
+        [owner, rank, result, diff, top_name, top_pts, low_name, low_pts]
         + roster_and_points
         + [total, projected, opp_owner, opp_total]
     )
 
-
-_NUM = re.compile(r"[-+]?\d*\.?\d+")
 
 def _to_float(value: str) -> float | None:
     m = _NUM.search(value or "")
@@ -98,3 +106,34 @@ def compute_diff(team_total: str, opp_total: str) -> str:
 
     diff = a - b
     return f"{diff:.2f}"
+
+
+def compute_starter_extremes(
+    roster: list[str],
+    points: list[str],
+    starter_count: int,
+) -> tuple[str, str, str, str]:
+    """
+    Returns (top_name, top_points, low_name, low_points) for starters only.
+    If we can't compute, returns "-" placeholders.
+    """
+    top: tuple[float, str] | None = None   # (pts, name)
+    low: tuple[float, str] | None = None
+
+    for i in range(min(starter_count, len(roster), len(points))):
+        name = roster[i] if roster[i] else "-"
+        pts = _to_float(points[i])
+
+        # Skip empty slots / missing points
+        if name == "-" or pts is None:
+            continue
+
+        if top is None or pts > top[0]:
+            top = (pts, name)
+        if low is None or pts < low[0]:
+            low = (pts, name)
+
+    if top is None or low is None:
+        return "-", "-", "-", "-"
+
+    return top[1], f"{top[0]:.2f}", low[1], f"{low[0]:.2f}"
