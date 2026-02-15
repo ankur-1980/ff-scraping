@@ -1,21 +1,17 @@
-from src.config import (
-    BASE_OUTPUT_DIR,
-    league_id,
-    league_start_year,
-    league_end_year,
-)
-from src.output_paths import ensure_output_paths
+from src.config import league_id
+from src.http_client import get_soup
+from src.secrets import cookie_string
 
 
 def main() -> None:
-    for season in range(league_start_year, league_end_year + 1):
-        paths = ensure_output_paths(
-            league_id=league_id,
-            season=season,
-            base_output_dir=BASE_OUTPUT_DIR,
-        )
+    url = f"https://fantasy.nfl.com/league/{league_id}/history/2025/standings?historyStandingsType=regular"
+    soup = get_soup(url, cookie_string, must_contain=["teamName", "teamPts"]) 
 
-        print(f"{season} -> {paths.standings_csv}")
+    title = soup.title.get_text(strip=True) if soup.title else "(no title)"
+    print(f"<title>: {title}")
+
+    text_sample = soup.get_text(" ", strip=True)[:200]
+    print(f"Text sample: {text_sample}")
 
 
 if __name__ == "__main__":
