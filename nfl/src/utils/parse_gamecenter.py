@@ -2,6 +2,8 @@ from dataclasses import dataclass
 import re
 from bs4 import BeautifulSoup
 
+_TEAM_WRAP_1 = re.compile(r"\bteamWrap\b.*\bteamWrap-1\b")
+
 @dataclass(frozen=True)
 class PlayerRow:
     slot: str
@@ -173,5 +175,17 @@ def parse_team_projected_total(soup: BeautifulSoup) -> str:
     m = re.search(r"([\d.]+)", text)
     return m.group(1) if m else "-"
 
+def parse_team_name(soup: BeautifulSoup) -> str:
+    """Team name for the current team (teamWrap-1)."""
+    matchup = soup.find("div", id="teamMatchupBoxScore")
+    if not matchup:
+        return "-"
+
+    team_wrap_1 = matchup.find("div", class_=_TEAM_WRAP_1)
+    if not team_wrap_1:
+        return "-"
+
+    h4 = team_wrap_1.find("h4")
+    return h4.get_text(" ", strip=True) if h4 else "-"
 
 
