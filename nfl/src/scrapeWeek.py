@@ -5,13 +5,7 @@ from src.http_client import get_soup
 from src.utils.parse_gamecenter import parse_bench_len
 from src.utils.getterGamecenter import get_starter_slots
 from src.utils.gamecenterCsvUtils import build_header, build_row
-
-
-def gamecenter_url(*, league_id: str, season: int, team_id: int, week: int) -> str:
-    return (
-        f"https://fantasy.nfl.com/league/{league_id}/history/{season}/teamgamecenter"
-        f"?teamId={team_id}&week={week}"
-    )
+from src.utils.gameCenterUrl import gamecenter_url
 
 
 def scrape_week(

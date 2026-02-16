@@ -9,8 +9,14 @@ from src.utils.getSeasonLength import get_season_length
 from src.scrapeWeek import scrape_week
 
 
-def main() -> None:
-    season = 2025
+def scrape_season(
+    *,
+    league_id: str,
+    season: int,
+    base_output_dir: Path,
+    cookie_string: str,
+) -> None:
+
 
     paths = ensure_output_paths(
         league_id=league_id,
@@ -43,7 +49,3 @@ def main() -> None:
         print(f"Week {week}: wrote {out_csv}")
 
     print("Done")
-
-
-if __name__ == "__main__":
-    main()
