@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict
 from src.config import cutoff_playoffs, league_id, REQUIRED_COLUMNS
 from collections import defaultdict
+from src.utils.normalize import normalize_manager_name
+
 
 
 def safe_int(value: str | None) -> int:
@@ -90,7 +92,8 @@ def aggregate_stats(standings_dir: Path) -> dict[str, ManagerAgg]:
         bottom_four_cutoff = max(1, num_owners - 3)
 
         for row in season_rows:
-            manager = (row.get("ManagerName") or "").strip()
+            manager = normalize_manager_name(row.get("ManagerName") or "")
+
             if not manager:
                 continue
 
@@ -113,7 +116,7 @@ def aggregate_stats(standings_dir: Path) -> dict[str, ManagerAgg]:
                 agg.playoffs += 1
 
             reg_rank = safe_rank(row.get("RegularSeasonRank"))
-            if reg_rank and reg_rank >= bottom_four_cutoff:
+            if reg_rank > 0 and reg_rank >= bottom_four_cutoff:
                 agg.toilet_bowls += 1
 
         for manager in managers_seen_this_season:
