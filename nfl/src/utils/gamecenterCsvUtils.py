@@ -1,12 +1,12 @@
 import re
 from bs4 import BeautifulSoup as BS
-from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_total, parse_team_projected_total
+from src.utils.parse_gamecenter import parse_owner, parse_opponent_owner, parse_opponent_total, parse_rank, parse_team_name, parse_team_total, parse_team_projected_total
 from src.utils.getterGamecenter import get_roster_names, get_roster_points
 
 _NUM = re.compile(r"[-+]?\d*\.?\d+")
 
 def build_header(starter_slots: list[str], longest_bench_len: int) -> list[str]:
-    header = ["Owner", "Rank", "Result", "Diff"]
+    header = ["ManagerName", "Team", "Rank", "Result", "Diff"]
     header += ["Top Starter", "Top Starter Points", "Low Starter", "Low Starter Points"]
 
     for slot in starter_slots:
@@ -58,6 +58,8 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
     projected = parse_team_projected_total(soup)
     opp_owner = parse_opponent_owner(soup)
     opp_total = parse_opponent_total(soup)
+    team_name = parse_team_name(soup)
+
 
     result = compute_result(total, opp_total, opp_owner)
     diff = compute_diff(total, opp_total)
@@ -71,7 +73,7 @@ def build_row(soup: BS, starter_slots: list[str], longest_bench_len: int) -> lis
         ), f"Inconsistent result/diff: result={result}, diff={diff}, total={total}, opp_total={opp_total}"
 
     return (
-        [owner, rank, result, diff, top_name, top_pts, low_name, low_pts]
+        [owner, team_name, rank, result, diff, top_name, top_pts, low_name, low_pts]
         + roster_and_points
         + [total, projected, opp_owner, opp_total]
     )
